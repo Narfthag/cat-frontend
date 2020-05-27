@@ -1,0 +1,52 @@
+.cat-screen {
+    width: 300px;
+    margin: 0px auto;
+}
+.message {
+    opacity: 1;
+    margin-top: 15px;
+    border: 1px solid #353535;
+    border-radius: 10px;
+    padding: 20px 10px;
+    text-align: center;
+    transition: .5s opacity;
+}
+
+.message.message_error{
+    border-color: #ff0000;
+}
+
+.message.not_shown {
+    opacity: 0;
+}
+
+
+.board-cat {
+    max-width: 270px;
+    margin: 10px auto;
+}
+.cat-row button {
+    width: 90px;
+    height: 90px;
+    display: block;
+    border: none;
+    font-size: 35px;
+    cursor: pointer;
+}
+.cat-row {
+    border-bottom: 1px solid #000;
+    display: flex;
+}
+
+.cat-row:last-child{
+    border-bottom: none;
+}
+
+.cat-row button{
+    border-right: 1px solid #000;
+}
+
+.cat-row button:last-child {
+    border-right: none;
+}
+
