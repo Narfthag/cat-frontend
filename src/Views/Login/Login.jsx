@@ -10,16 +10,20 @@ class Login extends Component {
 
     render(){
         return (
-            <div class="centered-login">
-                <input type="text" placeholder="nickname" value={this.state.nickname}></input>
-                <button>Sign In</button>
+            <div className="centered-login">
+                <input onChange={this.handleChange} type="text" placeholder="Escriba su apodo" />
+                <button onClick={this.onClick}>Ingresar</button>
             </div>
         );
     }
 
     onClick = () => {
-        // Conexion a base de datos para obtener el user_id.
-        
+        // Conexion a base de datos para obtener el user_id;
+        this.props.onLogin(this.state.nickname);
+    }
+
+    handleChange = (evt) => {
+        this.setState({ 'nickname' : evt.target.value });
     }
 }
 

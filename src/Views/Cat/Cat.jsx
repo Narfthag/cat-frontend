@@ -2,6 +2,10 @@ import React, {Component} from 'react';
 import Board from './Board.jsx';
 import Message from './Message.jsx';
 import SimpleCat from './simpleCat.js';
+import socketIOClient from "socket.io-client";
+
+const ENDPOINT = "http://localhost:5000";
+
 import './Cat.css'
 
 class Cat extends Component {
@@ -20,6 +24,9 @@ class Cat extends Component {
                 type: 2
             }
         }
+
+        const socket = socketIOClient(ENDPOINT);
+        socket.emit("auth")
     }
     render() { 
         return ( 

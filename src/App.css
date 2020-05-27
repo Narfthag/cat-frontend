@@ -1,0 +1,16 @@
+.App {
+    max-width: 300px;
+    margin: 0px auto;
+    padding-top: 30px;
+}
+.centered-login {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+
+.centered-login input {
+    margin-bottom: 25px;
+}
