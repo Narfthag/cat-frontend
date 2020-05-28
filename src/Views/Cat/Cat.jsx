@@ -3,10 +3,11 @@ import Board from './Board.jsx';
 import Message from './Message.jsx';
 import SimpleCat from './simpleCat.js';
 import socketIOClient from "socket.io-client";
+import './Cat.css'
 
 const ENDPOINT = "http://localhost:5000";
 
-import './Cat.css'
+const socket = socketIOClient(ENDPOINT);
 
 class Cat extends Component {
     constructor(props) {
@@ -22,26 +23,39 @@ class Cat extends Component {
             message: {
                 value: '',
                 type: 2
-            }
-        }
-
-        const socket = socketIOClient(ENDPOINT);
-        socket.emit("auth")
-    }
-    render() { 
-        return ( 
-            <div className="cat-screen">
-                <Board onClick={this.onClickBoard} board={this.state.board}></Board>
-                <Message type={this.state.message.type} message={this.state.message.value}/>
-            </div> 
-            );
+            }, 
+            noWait: false
+        }   
     }
 
 
+    componentDidMount = () => {
+        socket.emit('auth', { 'u_id': this.props.data.user_id, 'type': this.props.type });
+        socket.on('status-update', this.statusUpdateHandler);
+        socket.on('new-match', this.newMatchHandler);
+        socket.on('play-move', this.playMove);
+        socket.on('unlock', this.unlockState)
+    }
 
-    onClickBoard = (col, row) => {
-        const { engine, player_turn, not_ended } = this.state;
-        
+    componentWillUnmount = () => {
+        socket.off('status-update');
+        socket.off('new-match');
+    }
+
+    unlockState = (data) => {
+        console.log(data);
+        this.setState({
+            message: {
+                value: data.message,
+                type: 1
+            },
+            noWait: !(data.wait)
+        });
+    }
+
+    playMove = (data) => {
+        const {player_turn} = this.state;
+        const {col, row} = data;
         const new_state = {
             engine: this.state.engine,
             board: this.state.board,
@@ -53,32 +67,78 @@ class Cat extends Component {
             not_ended: this.state.not_ended
         }
 
-        if(not_ended){
-            let status = engine.isGoodMove(col, row);
-            if(status.status !== 1){
-                new_state.message.type = -1;
-                new_state.message.value = status.error_message;
-            } else {
-                if(player_turn){
-                    // Llamamos la funci'on que se va a encargar del turno de jugador de X.
-                    this.firstPlayerTurn(col, row, new_state);
-                } else {
-                    // Llamamos la funci'on que se va a encargar del turno de jugador de Y.
-                    this.secondPlayerTurn(col, row, new_state);
-                }
-                if( new_state.not_ended ){
-                    new_state.player_turn = !new_state.player_turn;
-                    new_state.not_ended = engine.notEnded;
-                }
-                new_state.board = engine.board;
-                
-            }
+        if(player_turn){
+            this.firstPlayerTurn(col, row, new_state);
         } else {
-            new_state.message.type = -1;
-            new_state.message.value = "El juego ya termino";
+            this.secondPlayerTurn(col, row, new_state);
         }
-        this.setState(new_state); 
+        new_state.player_turn = ! player_turn;
+        this.setState(new_state);
     }
+
+    statusUpdateHandler = (status) => {
+        this.setState({
+            message: {
+                value: status.message,
+                type: 1
+            },
+            noWait: !(status.wait)
+        })
+    }
+
+    newMatchHandler = (data) => {
+        this.setState({
+            message: {
+                value: data.message,
+                type: 1
+            },
+            noWait: !(data.wait)
+        })
+        this.props.changeRoom(data.matchRoom);
+    }
+
+
+    render() { 
+
+        return ( 
+            <div className="cat-screen">
+                { ( this.props.data.match_room !== null ) ? 
+                    <div><strong>Room:</strong> {this.props.data.match_room}</div> :
+                    <div><strong>Room:</strong> </div> }
+                <Board onClick={this.onClickBoardWs} board={this.state.board}></Board>
+                <Message type={this.state.message.type} message={this.state.message.value}/>
+            </div> 
+            );
+    }
+
+    onClickBoardWs = (col, row) => {
+        const {engine, not_ended, noWait } = this.state;
+        if(not_ended && noWait){
+            let goodMove = engine.isGoodMove(col, row);
+            if(goodMove.status !== 1){
+                this.setState({
+                    message: {
+                        message: {
+                            value: goodMove.error_message,
+                            type: -1
+                        }
+                    }
+                })
+            } else {
+                this.setState({
+                    noWait: !(this.state.noWait)
+                })
+                socket.emit('turn-player', {
+                    'room': this.props.data.match_room ,
+                    'col': col, 
+                    'row': row, 
+                    'player': this.props.data.user_id
+                })
+            }
+           
+        }
+    }
+
 
     firstPlayerTurn = (col, row, state) => {
         const {engine} = this.state;
